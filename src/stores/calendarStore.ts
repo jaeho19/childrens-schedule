@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { addWeeks, addMonths, addDays } from "date-fns";
 
-export type ViewMode = "week" | "month" | "day" | "timetable";
+export type ViewMode = "week" | "month" | "day" | "threeday" | "timetable";
 
 interface CalendarStore {
   currentDate: Date;
@@ -31,6 +31,9 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
       case "month":
         set({ currentDate: addMonths(currentDate, -1) });
         break;
+      case "threeday":
+        set({ currentDate: addDays(currentDate, -3) });
+        break;
       case "day":
         set({ currentDate: addDays(currentDate, -1) });
         break;
@@ -46,6 +49,9 @@ export const useCalendarStore = create<CalendarStore>((set, get) => ({
         break;
       case "month":
         set({ currentDate: addMonths(currentDate, 1) });
+        break;
+      case "threeday":
+        set({ currentDate: addDays(currentDate, 3) });
         break;
       case "day":
         set({ currentDate: addDays(currentDate, 1) });

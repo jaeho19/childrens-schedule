@@ -13,6 +13,7 @@
   /* WeekView: 헤더와 본문이 동일한 그리드 컬럼을 공유 */
   --week-time-col: 2.5rem;   /* 시간 라벨 열 (모바일) */
   --week-grid-cols: var(--week-time-col) repeat(7, minmax(0, 1fr));
+  --threeday-grid-cols: var(--week-time-col) repeat(3, minmax(0, 1fr));
 }
 
 @theme inline {
@@ -46,4 +47,10 @@ body {
 }
 .week-day-col:last-child {
   border-right: none;
+}
+
+.threeday-grid-row {
+  display: grid;
+  grid-template-columns: var(--threeday-grid-cols);
+  min-width: 0;
 }

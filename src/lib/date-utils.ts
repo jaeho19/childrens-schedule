@@ -73,6 +73,16 @@ export function getWeekDays(date: Date): Date[] {
   return eachDayOfInterval({ start, end });
 }
 
+/** Get 3 days starting from the given date (당일 포함) */
+export function getThreeDays(date: Date): Date[] {
+  return eachDayOfInterval({ start: date, end: addDays(date, 2) });
+}
+
+/** Get 3-day range for a given date */
+export function getThreeDayRange(date: Date) {
+  return { start: date, end: addDays(date, 2) };
+}
+
 /** Hour labels for time grid */
 export function getHourLabels(): string[] {
   const labels: string[] = [];

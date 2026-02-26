@@ -10,7 +10,7 @@ import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/fea
 import { useMembers } from "@/features/members/hooks/useMembers";
 import { useCategories } from "@/features/categories/hooks/useCategories";
 import { checkAuth } from "@/services/api";
-import { getWeekRange, toDateString } from "@/lib/date-utils";
+import { getWeekRange, getThreeDayRange, toDateString } from "@/lib/date-utils";
 import { CalendarHeader } from "@/components/layout/CalendarHeader";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileDrawer } from "@/components/layout/MobileDrawer";
@@ -37,6 +37,10 @@ const MonthView = dynamic(
 );
 const DayView = dynamic(
   () => import("@/components/calendar/DayView").then((m) => ({ default: m.DayView })),
+  { loading: () => <ViewSkeleton /> }
+);
+const ThreeDayView = dynamic(
+  () => import("@/components/calendar/ThreeDayView").then((m) => ({ default: m.ThreeDayView })),
   { loading: () => <ViewSkeleton /> }
 );
 const TimetableView = dynamic(
@@ -96,6 +100,10 @@ export default function HomePage() {
         const calStart = startOfWeek(monthStart, { weekStartsOn: 0 });
         const calEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
         return { from: toDateString(calStart), to: toDateString(calEnd) };
+      }
+      case "threeday": {
+        const { start, end } = getThreeDayRange(currentDate);
+        return { from: toDateString(start), to: toDateString(end) };
       }
       case "day":
         return { from: toDateString(currentDate), to: toDateString(currentDate) };
@@ -191,6 +199,16 @@ export default function HomePage() {
             members={members}
             onEventClick={handleEventClick}
             onDayClick={handleDayClick}
+            onSlotDoubleClick={handleSlotDoubleClick}
+          />
+        );
+      case "threeday":
+        return (
+          <ThreeDayView
+            events={events}
+            categories={categories}
+            members={members}
+            onEventClick={handleEventClick}
             onSlotDoubleClick={handleSlotDoubleClick}
           />
         );

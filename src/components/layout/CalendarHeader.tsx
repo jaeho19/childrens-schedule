@@ -1,12 +1,19 @@
 "use client";
 
 import { useCalendarStore, type ViewMode } from "@/stores/calendarStore";
-import { formatDateKo, getWeekRange } from "@/lib/date-utils";
+import { formatDateKo, getWeekRange, getThreeDayRange } from "@/lib/date-utils";
 import { format } from "date-fns";
 
-const VIEW_LABELS: { mode: ViewMode; label: string }[] = [
+const DESKTOP_VIEW_LABELS: { mode: ViewMode; label: string }[] = [
   { mode: "month", label: "월" },
   { mode: "week", label: "주" },
+  { mode: "day", label: "일" },
+  { mode: "timetable", label: "시간표" },
+];
+
+const MOBILE_VIEW_LABELS: { mode: ViewMode; label: string }[] = [
+  { mode: "week", label: "주" },
+  { mode: "threeday", label: "3일" },
   { mode: "day", label: "일" },
   { mode: "timetable", label: "시간표" },
 ];
@@ -26,6 +33,12 @@ export function CalendarHeader({ onMenuToggle }: { onMenuToggle?: () => void }) 
         const endStr = format(end, "M/d");
         return `${formatDateKo(currentDate, "yyyy년 M월")} (${startStr}~${endStr})`;
       }
+      case "threeday": {
+        const { start, end } = getThreeDayRange(currentDate);
+        const startStr = format(start, "M/d");
+        const endStr = format(end, "M/d");
+        return `${formatDateKo(currentDate, "yyyy년 M월")} (${startStr}~${endStr})`;
+      }
       case "day":
         return formatDateKo(currentDate, "yyyy년 M월 d일 (EEEE)");
     }
@@ -38,6 +51,10 @@ export function CalendarHeader({ onMenuToggle }: { onMenuToggle?: () => void }) 
       case "week":
       case "timetable": {
         const { start, end } = getWeekRange(currentDate);
+        return `${format(start, "M/d")}~${format(end, "M/d")}`;
+      }
+      case "threeday": {
+        const { start, end } = getThreeDayRange(currentDate);
         return `${format(start, "M/d")}~${format(end, "M/d")}`;
       }
       case "day":
@@ -97,7 +114,7 @@ export function CalendarHeader({ onMenuToggle }: { onMenuToggle?: () => void }) 
 
         {/* 뷰 탭: lg 이상에서만 1단에 표시 */}
         <div className="hidden lg:flex rounded-lg border border-gray-300">
-          {VIEW_LABELS.map(({ mode, label }) => (
+          {DESKTOP_VIEW_LABELS.map(({ mode, label }, i) => (
             <button
               key={mode}
               onClick={() => setViewMode(mode)}
@@ -105,7 +122,7 @@ export function CalendarHeader({ onMenuToggle }: { onMenuToggle?: () => void }) 
                 viewMode === mode
                   ? "bg-blue-600 text-white"
                   : "bg-white text-gray-700 hover:bg-gray-50"
-              } ${mode === "month" ? "rounded-l-lg" : ""} ${mode === "timetable" ? "rounded-r-lg" : ""}`}
+              } ${i === 0 ? "rounded-l-lg" : ""} ${i === DESKTOP_VIEW_LABELS.length - 1 ? "rounded-r-lg" : ""}`}
             >
               {label}
             </button>
@@ -115,7 +132,7 @@ export function CalendarHeader({ onMenuToggle }: { onMenuToggle?: () => void }) 
 
       {/* 2단: 뷰 탭 (lg 미만에서 표시, 풀폭 균등 분할) */}
       <div className="flex border-t border-gray-100 lg:hidden">
-        {VIEW_LABELS.map(({ mode, label }) => (
+        {MOBILE_VIEW_LABELS.map(({ mode, label }) => (
           <button
             key={mode}
             onClick={() => setViewMode(mode)}
