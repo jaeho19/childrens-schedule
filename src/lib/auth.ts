@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "dev-fallback-secret-change-in-production"
@@ -25,8 +25,25 @@ export async function verifyToken(token: string): Promise<boolean> {
   }
 }
 
+/**
+ * PIN verification using HMAC-SHA256.
+ * AUTH_PIN_HASH = hex output of HMAC-SHA256(pin, JWT_SECRET).
+ * No $ characters, safe for all env var systems.
+ */
 export async function verifyPin(pin: string): Promise<boolean> {
-  const hash = process.env.AUTH_PIN_HASH;
-  if (!hash) return false;
-  return bcrypt.compare(pin, hash);
+  const storedHash = process.env.AUTH_PIN_HASH;
+  const secret = process.env.JWT_SECRET || "dev-fallback-secret-change-in-production";
+  if (!storedHash) return false;
+
+  const inputHash = crypto
+    .createHmac("sha256", secret)
+    .update(pin)
+    .digest("hex");
+
+  // Timing-safe comparison to prevent timing attacks
+  if (inputHash.length !== storedHash.length) return false;
+  return crypto.timingSafeEqual(
+    Buffer.from(inputHash),
+    Buffer.from(storedHash)
+  );
 }
