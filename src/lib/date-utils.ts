@@ -38,10 +38,10 @@ export function timeToMinutes(time: string): number {
   return h * 60 + m;
 }
 
-/** Get week range (월~일) for a given date */
+/** Get week range (일~토) for a given date */
 export function getWeekRange(date: Date) {
-  const start = startOfWeek(date, { weekStartsOn: 1 });
-  const end = endOfWeek(date, { weekStartsOn: 1 });
+  const start = startOfWeek(date, { weekStartsOn: 0 });
+  const end = endOfWeek(date, { weekStartsOn: 0 });
   return { start, end };
 }
 

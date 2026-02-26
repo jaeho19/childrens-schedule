@@ -1,11 +1,22 @@
+/**
+ * 시간표 뷰 (교시 기반, 월~금)
+ *
+ * 색상 체계: 구성원 색상 기반
+ * - 배경: 구성원 대표색상 28% opacity
+ * - 좌측 바: 구성원 원색 3px
+ * - 제목 텍스트: 구성원 색상
+ * - 구성원 이름: MemberTag 컴포넌트로 하이라이트
+ */
 "use client";
 
 import { useMemo } from "react";
 
 import { getWeekDays, toDateString, timeToMinutes } from "@/lib/date-utils";
+import { getEventMemberColor, getEventMembers } from "@/lib/member-color";
 import { SCHOOL_PERIODS } from "@/lib/schedule";
 import { useCalendarStore } from "@/stores/calendarStore";
 import { useFilterStore } from "@/stores/filterStore";
+import { MemberTag, HighlightedText } from "@/components/event/MemberTag";
 import type { ExpandedEvent, Category, Member } from "@/types";
 
 interface TimetableViewProps {
@@ -16,10 +27,59 @@ interface TimetableViewProps {
 
 const WEEKDAY_LABELS = ["월", "화", "수", "목", "금"];
 
+/** 시간표 셀 안의 이벤트 블록 */
+function TimetableEventCell({
+  event,
+  category,
+  members,
+  showTime = false,
+}: {
+  event: ExpandedEvent;
+  category?: Category;
+  members: Member[];
+  showTime?: boolean;
+}) {
+  const eventMembers = getEventMembers(event.memberIds, members);
+  const 대표색상 = getEventMemberColor(event.memberIds, members);
+
+  return (
+    <div
+      className="mb-1 rounded border-l-[3px] pl-1.5 pr-1 py-0.5 text-[10px] sm:text-xs"
+      style={{
+        backgroundColor: `${대표색상}28`,
+        borderLeftColor: 대표색상,
+      }}
+    >
+      <div className="font-bold" style={{ color: 대표색상 }}>
+        {category?.icon} {event.title}
+      </div>
+      {showTime && (
+        <div className="text-[9px] sm:text-[10px] font-medium" style={{ color: `${대표색상}CC` }}>
+          {event.startTime}~{event.endTime}
+        </div>
+      )}
+      {event.note && (
+        <HighlightedText
+          text={event.note}
+          members={members}
+          className="text-[9px] sm:text-[10px] text-gray-500 block"
+        />
+      )}
+      {eventMembers.length > 0 && (
+        <div className="flex items-center gap-0.5 flex-wrap mt-0.5">
+          {eventMembers.map((m) => (
+            <MemberTag key={m.id} member={m} size="xs" />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TimetableView({ events, categories, members }: TimetableViewProps) {
   const currentDate = useCalendarStore((s) => s.currentDate);
   const { selectedMemberIds, selectedCategoryIds } = useFilterStore();
-  const days = useMemo(() => getWeekDays(currentDate).slice(0, 5), [currentDate]); // 월~금만
+  const days = useMemo(() => getWeekDays(currentDate).slice(1, 6), [currentDate]); // 월~금만
 
   const filteredEvents = useMemo(
     () =>
@@ -97,34 +157,14 @@ export function TimetableView({ events, categories, members }: TimetableViewProp
                       key={dateStr}
                       className="border border-gray-200 px-1 py-1 sm:px-2 sm:py-1.5 align-top"
                     >
-                      {cellEvents.map((event) => {
-                        const cat = categoryMap.get(event.categoryId);
-                        const eventMembers = members.filter((m) =>
-                          event.memberIds.includes(m.id)
-                        );
-                        return (
-                          <div
-                            key={`${event.eventId}-${event.date}`}
-                            className="mb-1 rounded px-1 py-0.5 text-[10px] sm:text-xs"
-                            style={{
-                              backgroundColor: `${cat?.color ?? "#9E9E9E"}15`,
-                              borderLeft: `2px solid ${cat?.color ?? "#9E9E9E"}`,
-                            }}
-                          >
-                            <div className="font-medium" style={{ color: cat?.color }}>
-                              {cat?.icon} {event.title}
-                            </div>
-                            {event.note && (
-                              <div className="text-[9px] sm:text-[10px] text-gray-400">{event.note}</div>
-                            )}
-                            {eventMembers.length === 1 && (
-                              <div className="text-[9px] sm:text-[10px] text-gray-400">
-                                ({eventMembers[0].name})
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                      {cellEvents.map((event) => (
+                        <TimetableEventCell
+                          key={`${event.eventId}-${event.date}`}
+                          event={event}
+                          category={categoryMap.get(event.categoryId)}
+                          members={members}
+                        />
+                      ))}
                     </td>
                   );
                 })}
@@ -144,34 +184,15 @@ export function TimetableView({ events, categories, members }: TimetableViewProp
                     key={dateStr}
                     className="border border-gray-200 px-1 py-1 sm:px-2 sm:py-1.5 align-top"
                   >
-                    {afterEvents.map((event) => {
-                      const cat = categoryMap.get(event.categoryId);
-                      const eventMembers = members.filter((m) =>
-                        event.memberIds.includes(m.id)
-                      );
-                      return (
-                        <div
-                          key={`${event.eventId}-${event.date}`}
-                          className="mb-1 rounded px-1 py-0.5 text-[10px] sm:text-xs"
-                          style={{
-                            backgroundColor: `${cat?.color ?? "#9E9E9E"}15`,
-                            borderLeft: `2px solid ${cat?.color ?? "#9E9E9E"}`,
-                          }}
-                        >
-                          <div className="font-medium" style={{ color: cat?.color }}>
-                            {cat?.icon} {event.title}
-                          </div>
-                          <div className="text-[9px] sm:text-[10px] text-gray-500">
-                            {event.startTime}~{event.endTime}
-                          </div>
-                          {eventMembers.length === 1 && (
-                            <div className="text-[9px] sm:text-[10px] text-gray-400">
-                              ({eventMembers[0].name})
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                    {afterEvents.map((event) => (
+                      <TimetableEventCell
+                        key={`${event.eventId}-${event.date}`}
+                        event={event}
+                        category={categoryMap.get(event.categoryId)}
+                        members={members}
+                        showTime
+                      />
+                    ))}
                   </td>
                 );
               })}

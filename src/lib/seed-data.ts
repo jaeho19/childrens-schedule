@@ -8,16 +8,16 @@ export const MEMBERS: Member[] = [
 ];
 
 export const CATEGORIES: Category[] = [
-  { id: "school", name: "학교", color: "#4285F4", icon: "🏫" },
+  { id: "school", name: "학교", color: "#9E9E9E", icon: "🏫" },
   { id: "academy", name: "학원", color: "#EA4335", icon: "📚" },
   { id: "talent", name: "재능교육", color: "#FBBC04", icon: "🎨" },
-  { id: "english", name: "영어", color: "#34A853", icon: "🌐" },
-  { id: "sports", name: "체육/운동", color: "#FF6D01", icon: "⚽" },
+  { id: "english", name: "영어", color: "#F9A825", icon: "🌐" },
+  { id: "sports", name: "체육/운동", color: "#43A047", icon: "⚽" },
   { id: "family", name: "가족", color: "#8E24AA", icon: "🏠" },
   { id: "dinner", name: "저녁외식", color: "#D81B60", icon: "🍽️" },
   { id: "conference", name: "학회", color: "#5C6BC0", icon: "🎓" },
-  { id: "class", name: "수업(부모)", color: "#00897B", icon: "📖" },
-  { id: "etc", name: "기타", color: "#9E9E9E", icon: "📝" },
+  { id: "class", name: "수업(부모)", color: "#9E9E9E", icon: "📖" },
+  { id: "etc", name: "기타", color: "#757575", icon: "📝" },
 ];
 
 export const EVENTS: CalendarEvent[] = [
@@ -76,6 +76,81 @@ export const EVENTS: CalendarEvent[] = [
     createdAt: "2026-02-26T00:00:00Z",
     updatedAt: "2026-02-26T00:00:00Z",
   },
+  // 화요일 영어수업: 이찬우 먼저, 이선우 뒷타임
+  {
+    id: "evt-english-tue-chanwoo",
+    title: "영어수업",
+    categoryId: "english",
+    memberIds: ["chanwoo"],
+    startTime: "17:30",
+    endTime: "18:30",
+    date: null,
+    recurrence: {
+      type: "weekly",
+      daysOfWeek: [2], // 화
+      startDate: "2026-03-03",
+      endDate: null,
+    },
+    note: null,
+    createdAt: "2026-02-26T00:00:00Z",
+    updatedAt: "2026-02-26T00:00:00Z",
+  },
+  {
+    id: "evt-english-tue-sunwoo",
+    title: "영어수업",
+    categoryId: "english",
+    memberIds: ["sunwoo"],
+    startTime: "18:30",
+    endTime: "19:30",
+    date: null,
+    recurrence: {
+      type: "weekly",
+      daysOfWeek: [2], // 화
+      startDate: "2026-03-03",
+      endDate: null,
+    },
+    note: null,
+    createdAt: "2026-02-26T00:00:00Z",
+    updatedAt: "2026-02-26T00:00:00Z",
+  },
+  // 목요일 영어수업: 이선우 먼저, 이찬우 뒷타임
+  {
+    id: "evt-english-thu-sunwoo",
+    title: "영어수업",
+    categoryId: "english",
+    memberIds: ["sunwoo"],
+    startTime: "17:30",
+    endTime: "18:30",
+    date: null,
+    recurrence: {
+      type: "weekly",
+      daysOfWeek: [4], // 목
+      startDate: "2026-03-05",
+      endDate: null,
+    },
+    note: null,
+    createdAt: "2026-02-26T00:00:00Z",
+    updatedAt: "2026-02-26T00:00:00Z",
+  },
+  {
+    id: "evt-english-thu-chanwoo",
+    title: "영어수업",
+    categoryId: "english",
+    memberIds: ["chanwoo"],
+    startTime: "18:30",
+    endTime: "19:30",
+    date: null,
+    recurrence: {
+      type: "weekly",
+      daysOfWeek: [4], // 목
+      startDate: "2026-03-05",
+      endDate: null,
+    },
+    note: null,
+    createdAt: "2026-02-26T00:00:00Z",
+    updatedAt: "2026-02-26T00:00:00Z",
+  },
+  // 화요일 축구 (이찬우, 19:00~20:00)
   {
     id: "evt-soccer",
     title: "축구",
@@ -87,25 +162,7 @@ export const EVENTS: CalendarEvent[] = [
     recurrence: {
       type: "weekly",
       daysOfWeek: [2], // 화
-      startDate: "2026-03-04",
-      endDate: null,
-    },
-    note: null,
-    createdAt: "2026-02-26T00:00:00Z",
-    updatedAt: "2026-02-26T00:00:00Z",
-  },
-  {
-    id: "evt-english",
-    title: "영어수업",
-    categoryId: "english",
-    memberIds: ["sunwoo", "chanwoo"],
-    startTime: "17:30",
-    endTime: "19:30",
-    date: null,
-    recurrence: {
-      type: "weekly",
-      daysOfWeek: [2, 4], // 화,목
-      startDate: "2026-03-04",
+      startDate: "2026-03-03",
       endDate: null,
     },
     note: null,
@@ -140,11 +197,24 @@ export const EVENTS: CalendarEvent[] = [
     updatedAt: "2026-02-26T00:00:00Z",
   },
   {
-    id: "evt-english-0303",
+    id: "evt-english-0303-chanwoo",
     title: "영어수업",
     categoryId: "english",
-    memberIds: ["sunwoo", "chanwoo"],
+    memberIds: ["chanwoo"],
     startTime: "17:30",
+    endTime: "18:30",
+    date: "2026-03-03",
+    recurrence: null,
+    note: null,
+    createdAt: "2026-02-26T00:00:00Z",
+    updatedAt: "2026-02-26T00:00:00Z",
+  },
+  {
+    id: "evt-english-0303-sunwoo",
+    title: "영어수업",
+    categoryId: "english",
+    memberIds: ["sunwoo"],
+    startTime: "18:30",
     endTime: "19:30",
     date: "2026-03-03",
     recurrence: null,
@@ -154,17 +224,17 @@ export const EVENTS: CalendarEvent[] = [
   },
   // 부모 일정 - 반복
   {
-    id: "evt-sooyoung-class",
+    id: "evt-jaeho-class",
     title: "대학원 수업",
     categoryId: "class",
-    memberIds: ["sooyoung"],
+    memberIds: ["jaeho"],
     startTime: "19:00",
     endTime: "21:00",
     date: null,
     recurrence: {
       type: "weekly",
-      daysOfWeek: [1, 3], // 월, 수
-      startDate: "2026-03-04",
+      daysOfWeek: [2], // 화
+      startDate: "2026-03-03",
       endDate: "2026-06-30",
     },
     note: null,

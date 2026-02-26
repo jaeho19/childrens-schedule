@@ -1,6 +1,7 @@
 "use client";
 
 import type { ExpandedEvent, Category, Member } from "@/types";
+import { HighlightedText } from "./MemberTag";
 
 interface EventModalProps {
   event: ExpandedEvent;
@@ -101,7 +102,7 @@ export function EventModal({ event, category, members, onClose, onEdit, onDelete
               <svg className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
               </svg>
-              <span className="text-sm text-gray-600">{event.note}</span>
+              <HighlightedText text={event.note} members={members} className="text-sm text-gray-600" />
             </div>
           )}
         </div>

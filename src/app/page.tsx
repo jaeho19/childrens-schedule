@@ -59,6 +59,7 @@ export default function HomePage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<ExpandedEvent | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [newEventDefaults, setNewEventDefaults] = useState<{ date?: string; startTime?: string; endTime?: string } | null>(null);
   const [editingEvent, setEditingEvent] = useState<ExpandedEvent | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
@@ -92,8 +93,8 @@ export default function HomePage() {
       case "month": {
         const monthStart = startOfMonth(currentDate);
         const monthEnd = endOfMonth(currentDate);
-        const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-        const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+        const calStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+        const calEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
         return { from: toDateString(calStart), to: toDateString(calEnd) };
       }
       case "day":
@@ -114,6 +115,7 @@ export default function HomePage() {
   );
 
   const handleEventClick = useCallback((event: ExpandedEvent) => {
+    console.log("[page] handleEventClick 호출됨:", event.title, event.eventId);
     setSelectedEvent(event);
   }, []);
 
@@ -123,6 +125,15 @@ export default function HomePage() {
       setViewMode("day");
     },
     [setCurrentDate, setViewMode]
+  );
+
+  const handleSlotDoubleClick = useCallback(
+    (date: string, startTime?: string) => {
+      const endHour = startTime ? String(parseInt(startTime.split(":")[0]) + 1).padStart(2, "0") + ":00" : undefined;
+      setNewEventDefaults({ date, startTime, endTime: endHour });
+      setShowForm(true);
+    },
+    []
   );
 
   const handleEdit = useCallback(() => {
@@ -140,6 +151,22 @@ export default function HomePage() {
     [deleteEvent]
   );
 
+  // 키보드 Delete/Backspace 키로 선택된 일정 삭제
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 입력 중인 요소에서는 동작하지 않음
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable) return;
+
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedEvent) {
+        e.preventDefault();
+        handleDelete(selectedEvent.eventId);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedEvent, handleDelete]);
+
   const renderView = () => {
     if (eventsLoading) {
       return <ViewSkeleton />;
@@ -153,6 +180,7 @@ export default function HomePage() {
             categories={categories}
             members={members}
             onEventClick={handleEventClick}
+            onSlotDoubleClick={handleSlotDoubleClick}
           />
         );
       case "month":
@@ -163,6 +191,7 @@ export default function HomePage() {
             members={members}
             onEventClick={handleEventClick}
             onDayClick={handleDayClick}
+            onSlotDoubleClick={handleSlotDoubleClick}
           />
         );
       case "day":
@@ -172,6 +201,7 @@ export default function HomePage() {
             categories={categories}
             members={members}
             onEventClick={handleEventClick}
+            onSlotDoubleClick={handleSlotDoubleClick}
           />
         );
       case "timetable":
@@ -207,7 +237,7 @@ export default function HomePage() {
           <Sidebar members={members} categories={categories} />
           <div className="px-4 pb-4">
             <button
-              onClick={() => setShowForm(true)}
+              onClick={() => { setNewEventDefaults(null); setShowForm(true); }}
               className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
             >
               + 일정 추가
@@ -229,7 +259,7 @@ export default function HomePage() {
 
       {/* 모바일 + 버튼 */}
       <button
-        onClick={() => setShowForm(true)}
+        onClick={() => { setNewEventDefaults(null); setShowForm(true); }}
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors lg:hidden flex items-center justify-center"
         aria-label="일정 추가"
       >
@@ -255,11 +285,17 @@ export default function HomePage() {
         <EventForm
           categories={categories}
           members={members}
+          initialData={newEventDefaults ? {
+            date: newEventDefaults.date,
+            startTime: newEventDefaults.startTime ?? undefined,
+            endTime: newEventDefaults.endTime ?? undefined,
+          } : undefined}
           onSubmit={(data) => {
             createEvent.mutate(data);
             setShowForm(false);
+            setNewEventDefaults(null);
           }}
-          onCancel={() => setShowForm(false)}
+          onCancel={() => { setShowForm(false); setNewEventDefaults(null); }}
         />
       )}
 

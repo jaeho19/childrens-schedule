@@ -14,9 +14,10 @@ interface DayViewProps {
   categories: Category[];
   members: Member[];
   onEventClick?: (event: ExpandedEvent) => void;
+  onSlotDoubleClick?: (date: string, startTime?: string) => void;
 }
 
-export function DayView({ events, categories, members, onEventClick }: DayViewProps) {
+export function DayView({ events, categories, members, onEventClick, onSlotDoubleClick }: DayViewProps) {
   const currentDate = useCalendarStore((s) => s.currentDate);
   const { selectedMemberIds, selectedCategoryIds } = useFilterStore();
   const dateStr = toDateString(currentDate);
@@ -48,7 +49,19 @@ export function DayView({ events, categories, members, onEventClick }: DayViewPr
 
       <div className="flex-1 overflow-y-auto">
         <TimeGrid>
-          <div className="relative" style={{ height: `${GRID_HEIGHT}px` }}>
+          <div
+            className="relative"
+            style={{ height: `${GRID_HEIGHT}px` }}
+            onDoubleClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const y = e.clientY - rect.top;
+              const minutes = Math.floor(y / 1.2);
+              const hour = Math.floor(minutes / 60) + 8;
+              const min = Math.floor(minutes % 60 / 30) * 30;
+              const time = `${String(Math.min(hour, 21)).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+              onSlotDoubleClick?.(dateStr, time);
+            }}
+          >
             {dayEvents.map((event) => (
               <EventBlock
                 key={`${event.eventId}-${event.date}`}

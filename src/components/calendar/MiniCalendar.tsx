@@ -20,7 +20,7 @@ interface MiniCalendarProps {
   onDateSelect: (date: Date) => void;
 }
 
-const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) {
   const [viewMonth, setViewMonth] = useState(selectedDate);
@@ -29,8 +29,8 @@ export function MiniCalendar({ selectedDate, onDateSelect }: MiniCalendarProps) 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(viewMonth);
     const monthEnd = endOfMonth(viewMonth);
-    const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const calStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const calEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
     return eachDayOfInterval({ start: calStart, end: calEnd });
   }, [viewMonth]);
 

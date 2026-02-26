@@ -19,9 +19,10 @@ interface WeekViewProps {
   categories: Category[];
   members: Member[];
   onEventClick?: (event: ExpandedEvent) => void;
+  onSlotDoubleClick?: (date: string, startTime?: string) => void;
 }
 
-export function WeekView({ events, categories, members, onEventClick }: WeekViewProps) {
+export function WeekView({ events, categories, members, onEventClick, onSlotDoubleClick }: WeekViewProps) {
   const currentDate = useCalendarStore((s) => s.currentDate);
   const { selectedMemberIds, selectedCategoryIds } = useFilterStore();
   const days = useMemo(() => getWeekDays(currentDate), [currentDate]);
@@ -128,6 +129,15 @@ export function WeekView({ events, categories, members, onEventClick }: WeekView
                   className={`week-day-col relative ${
                     isToday ? "bg-blue-50/20" : ""
                   }`}
+                  onDoubleClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const y = e.clientY - rect.top;
+                    const minutes = Math.floor(y / 1.2);
+                    const hour = Math.floor(minutes / 60) + 8;
+                    const min = Math.floor(minutes % 60 / 30) * 30;
+                    const time = `${String(Math.min(hour, 21)).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+                    onSlotDoubleClick?.(dateStr, time);
+                  }}
                 >
                   {/* 시간 가로선 */}
                   {getHourLabels().map((label) => {

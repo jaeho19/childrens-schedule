@@ -1,14 +1,23 @@
 /**
  * Server-side in-memory data store.
  * API Routes import from here. Will be replaced with real DB later.
+ * Uses globalThis to persist data across HMR in dev mode.
  */
 import type { CalendarEvent, RecurrenceException, Member, Category, ExpandedEvent } from "@/types";
 import { MEMBERS, CATEGORIES, EVENTS, EXCEPTIONS } from "@/lib/seed-data";
 import { expandAllEvents } from "@/lib/recurrence";
 import { fromDateString } from "@/lib/date-utils";
 
-let events = [...EVENTS];
-let exceptions: RecurrenceException[] = [...EXCEPTIONS];
+const g = globalThis as unknown as {
+  __store_events?: CalendarEvent[];
+  __store_exceptions?: RecurrenceException[];
+};
+
+if (!g.__store_events) g.__store_events = [...EVENTS];
+if (!g.__store_exceptions) g.__store_exceptions = [...EXCEPTIONS];
+
+let events = g.__store_events;
+let exceptions = g.__store_exceptions;
 
 export function getMembers(): Member[] {
   return [...MEMBERS];
@@ -57,8 +66,11 @@ export function editEvent(
 }
 
 export function removeEvent(id: string): void {
-  events = events.filter((e) => e.id !== id);
-  exceptions = exceptions.filter((ex) => ex.eventId !== id);
+  const idx = events.findIndex((e) => e.id === id);
+  if (idx !== -1) events.splice(idx, 1);
+  for (let i = exceptions.length - 1; i >= 0; i--) {
+    if (exceptions[i].eventId === id) exceptions.splice(i, 1);
+  }
 }
 
 export function addException(
@@ -73,5 +85,6 @@ export function addException(
 }
 
 export function removeException(id: string): void {
-  exceptions = exceptions.filter((ex) => ex.id !== id);
+  const idx = exceptions.findIndex((ex) => ex.id === id);
+  if (idx !== -1) exceptions.splice(idx, 1);
 }

@@ -26,12 +26,13 @@ interface MonthViewProps {
   members: Member[];
   onEventClick?: (event: ExpandedEvent) => void;
   onDayClick?: (date: Date) => void;
+  onSlotDoubleClick?: (date: string, startTime?: string) => void;
 }
 
-const WEEKDAYS = ["월", "화", "수", "목", "금", "토", "일"];
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const MAX_VISIBLE_EVENTS = 3;
 
-export function MonthView({ events, categories, members, onEventClick, onDayClick }: MonthViewProps) {
+export function MonthView({ events, categories, members, onEventClick, onDayClick, onSlotDoubleClick }: MonthViewProps) {
   const currentDate = useCalendarStore((s) => s.currentDate);
   const { selectedMemberIds, selectedCategoryIds } = useFilterStore();
   const today = new Date();
@@ -49,8 +50,8 @@ export function MonthView({ events, categories, members, onEventClick, onDayClic
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
-    const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const calStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const calEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
     return eachDayOfInterval({ start: calStart, end: calEnd });
   }, [currentDate]);
 
@@ -95,6 +96,7 @@ export function MonthView({ events, categories, members, onEventClick, onDayClic
                 !isCurrentMonth ? "bg-gray-50/50" : ""
               }`}
               onClick={() => onDayClick?.(day)}
+              onDoubleClick={(e) => { e.stopPropagation(); onSlotDoubleClick?.(dateStr); }}
             >
               <div
                 className={`text-xs font-medium mb-1 ${
@@ -113,6 +115,7 @@ export function MonthView({ events, categories, members, onEventClick, onDayClic
                   key={`${event.eventId}-${event.date}`}
                   event={event}
                   category={categoryMap.get(event.categoryId)}
+                  members={members}
                   onClick={onEventClick}
                 />
               ))}
