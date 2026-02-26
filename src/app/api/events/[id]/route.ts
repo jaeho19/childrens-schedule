@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { requireAuth } from "@/lib/auth";
 import { fetchEvent, updateEvent, deleteEvent } from "@/services/api";
 import type { CalendarEvent } from "@/types";
 
@@ -28,6 +29,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAuth();
+  if (authError) return authError;
   try {
     const { id } = await params;
     const event = await fetchEvent(id);
@@ -50,6 +53,8 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAuth();
+  if (authError) return authError;
   try {
     const { id } = await params;
 
@@ -105,6 +110,8 @@ export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAuth();
+  if (authError) return authError;
   try {
     const { id } = await params;
 

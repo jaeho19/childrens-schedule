@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { requireAuth } from "@/lib/auth";
 import { fetchEvents, createEvent } from "@/services/api";
 import type { CalendarEvent } from "@/types";
 
@@ -25,6 +26,8 @@ function isValidMemberIds(ids: unknown): ids is string[] {
 }
 
 export async function GET(req: NextRequest) {
+  const authError = await requireAuth();
+  if (authError) return authError;
   try {
     const { searchParams } = new URL(req.url);
     const from = searchParams.get("from");
@@ -55,6 +58,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const authError = await requireAuth();
+  if (authError) return authError;
   try {
     const body = await req.json() as Partial<Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">>;
 

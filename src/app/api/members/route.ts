@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 
+import { requireAuth } from "@/lib/auth";
 import { fetchMembers } from "@/services/api";
 
 export async function GET() {
+  const authError = await requireAuth();
+  if (authError) return authError;
   try {
     const members = await fetchMembers();
     return NextResponse.json({ members });

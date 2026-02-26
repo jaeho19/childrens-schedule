@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { requireAuth } from "@/lib/auth";
 import { fetchEvent, fetchExceptions, createException } from "@/services/api";
 import type { RecurrenceException } from "@/types";
 
@@ -13,6 +14,8 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAuth();
+  if (authError) return authError;
   try {
     const { id } = await params;
 
@@ -38,6 +41,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authError = await requireAuth();
+  if (authError) return authError;
   try {
     const { id } = await params;
 
