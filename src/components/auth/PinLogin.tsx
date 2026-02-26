@@ -7,35 +7,21 @@ interface PinLoginProps {
 }
 
 const PIN_LENGTH = 4;
+const AUTH_PIN = "0924";
 
 export function PinLogin({ onSuccess }: PinLoginProps) {
   const [digits, setDigits] = useState<string[]>(Array(PIN_LENGTH).fill(""));
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleSubmit = useCallback(
-    async (pin: string) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/auth/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pin }),
-        });
-        if (res.ok) {
-          onSuccess();
-        } else {
-          const data = await res.json() as { error?: { message?: string } };
-          setError(data.error?.message ?? "PIN이 올바르지 않습니다.");
-          setDigits(Array(PIN_LENGTH).fill(""));
-          setTimeout(() => inputRefs.current[0]?.focus(), 0);
-        }
-      } catch {
-        setError("네트워크 오류가 발생했습니다.");
-      } finally {
-        setLoading(false);
+    (pin: string) => {
+      if (pin === AUTH_PIN) {
+        onSuccess();
+      } else {
+        setError("PIN이 올바르지 않습니다.");
+        setDigits(Array(PIN_LENGTH).fill(""));
+        setTimeout(() => inputRefs.current[0]?.focus(), 0);
       }
     },
     [onSuccess]
@@ -56,7 +42,7 @@ export function PinLogin({ onSuccess }: PinLoginProps) {
       if (value && index === PIN_LENGTH - 1) {
         const pin = [...next.slice(0, PIN_LENGTH - 1), value].join("");
         if (pin.length === PIN_LENGTH) {
-          void handleSubmit(pin);
+          handleSubmit(pin);
         }
       }
     },
@@ -99,7 +85,6 @@ export function PinLogin({ onSuccess }: PinLoginProps) {
                   ? "border-blue-500 bg-blue-50"
                   : "border-gray-200 bg-gray-50 focus:border-blue-400"
               }`}
-              disabled={loading}
               autoFocus={i === 0}
             />
           ))}
@@ -107,10 +92,6 @@ export function PinLogin({ onSuccess }: PinLoginProps) {
 
         {error && (
           <p className="mb-4 text-center text-sm font-medium text-red-500">{error}</p>
-        )}
-
-        {loading && (
-          <p className="text-center text-sm text-gray-400">확인 중...</p>
         )}
       </div>
     </div>
