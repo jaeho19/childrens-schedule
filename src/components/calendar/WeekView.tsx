@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useRef, useCallback, useEffect } from "react";
+import { useMemo } from "react";
 
 import { format, isSameDay } from "date-fns";
 import { ko } from "date-fns/locale";
 
-import { getWeekDays, toDateString, GRID_HEIGHT } from "@/lib/date-utils";
+import { getWeekDays, toDateString, GRID_HEIGHT, getHourLabels } from "@/lib/date-utils";
+import { SCHOOL_PERIODS } from "@/lib/schedule";
 import { useCalendarStore } from "@/stores/calendarStore";
 import { useFilterStore } from "@/stores/filterStore";
-import { TimeGrid } from "@/components/calendar/TimeGrid";
 import { EventBlock } from "@/components/event/EventBlock";
+import { CurrentTimeIndicator } from "./CurrentTimeIndicator";
+import { PeriodOverlay } from "./PeriodOverlay";
 import type { ExpandedEvent, Category, Member } from "@/types";
 
 interface WeekViewProps {
@@ -24,36 +26,6 @@ export function WeekView({ events, categories, members, onEventClick }: WeekView
   const { selectedMemberIds, selectedCategoryIds } = useFilterStore();
   const days = useMemo(() => getWeekDays(currentDate), [currentDate]);
   const today = new Date();
-
-  const headerScrollRef = useRef<HTMLDivElement>(null);
-  const gridScrollRef = useRef<HTMLDivElement>(null);
-
-  // 헤더-그리드 가로 스크롤 동기화
-  const handleHeaderScroll = useCallback(() => {
-    if (headerScrollRef.current && gridScrollRef.current) {
-      gridScrollRef.current.scrollLeft = headerScrollRef.current.scrollLeft;
-    }
-  }, []);
-
-  const handleGridScroll = useCallback(() => {
-    if (headerScrollRef.current && gridScrollRef.current) {
-      headerScrollRef.current.scrollLeft = gridScrollRef.current.scrollLeft;
-    }
-  }, []);
-
-  // 오늘 날짜 컬럼으로 초기 스크롤 (모바일)
-  useEffect(() => {
-    const todayIndex = days.findIndex((d) => isSameDay(d, today));
-    if (todayIndex >= 0 && gridScrollRef.current) {
-      const colWidth = gridScrollRef.current.scrollWidth / 7;
-      const scrollTarget = Math.max(0, colWidth * todayIndex - 50);
-      gridScrollRef.current.scrollLeft = scrollTarget;
-      if (headerScrollRef.current) {
-        headerScrollRef.current.scrollLeft = scrollTarget;
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDate]);
 
   const filteredEvents = useMemo(
     () =>
@@ -84,80 +56,106 @@ export function WeekView({ events, categories, members, onEventClick }: WeekView
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* 요일 헤더 */}
-      <div className="flex border-b border-gray-200 bg-white sticky top-0 z-10">
-        <div className="w-10 sm:w-14 flex-shrink-0" />
-        <div
-          ref={headerScrollRef}
-          className="flex-1 overflow-x-auto scrollbar-hide"
-          onScroll={handleHeaderScroll}
-        >
-          <div className="flex min-w-[700px]">
+      {/* 요일 헤더 — week-grid-row로 본문과 동일한 컬럼 공유 */}
+      <div className="week-grid-row border-b border-gray-200 bg-white sticky top-0 z-10">
+        {/* 시간축 빈 셀 */}
+        <div />
+        {days.map((day, i) => {
+          const isToday = isSameDay(day, today);
+          return (
+            <div
+              key={day.toISOString()}
+              className={`week-day-col text-center py-2 ${
+                isToday ? "bg-blue-50" : ""
+              }`}
+            >
+              <div className="text-xs text-gray-500">
+                {format(day, "EEE", { locale: ko })}
+              </div>
+              <div
+                className={`text-sm font-semibold ${
+                  isToday
+                    ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white"
+                    : "text-gray-900"
+                }`}
+              >
+                {format(day, "d")}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 타임그리드 + 이벤트 — 동일한 week-grid-row 사용 */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="relative" style={{ height: `${GRID_HEIGHT}px` }}>
+          {/* 교시 오버레이 + 현재시간 인디케이터 (시간 라벨 제외, 7컬럼 영역) */}
+          <div
+            className="pointer-events-none absolute inset-0 z-10"
+            style={{ left: "var(--week-time-col)" }}
+          >
+            <PeriodOverlay periods={SCHOOL_PERIODS} />
+            <CurrentTimeIndicator />
+          </div>
+
+          <div className="week-grid-row h-full">
+            {/* 시간 라벨 열 */}
+            <div className="relative">
+              {getHourLabels().map((label) => {
+                const hour = parseInt(label);
+                const top = (hour - 8) * 60 * 1.2;
+                return (
+                  <div
+                    key={label}
+                    className="absolute text-right text-[10px] sm:text-xs text-gray-500 pr-1 sm:pr-2 w-full"
+                    style={{ top: `${top - 8}px` }}
+                  >
+                    <span className="hidden sm:inline">{label}</span>
+                    <span className="sm:hidden">{hour}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 7일 컬럼 — 각각 grid 셀 */}
             {days.map((day) => {
+              const dateStr = toDateString(day);
+              const dayEvents = eventsByDate.get(dateStr) ?? [];
               const isToday = isSameDay(day, today);
               return (
                 <div
-                  key={day.toISOString()}
-                  className={`flex-1 min-w-[100px] text-center py-2 border-l border-gray-100 ${
-                    isToday ? "bg-blue-50" : ""
+                  key={dateStr}
+                  className={`week-day-col relative ${
+                    isToday ? "bg-blue-50/20" : ""
                   }`}
                 >
-                  <div className="text-xs text-gray-500">
-                    {format(day, "EEE", { locale: ko })}
-                  </div>
-                  <div
-                    className={`text-sm font-semibold ${
-                      isToday
-                        ? "inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white"
-                        : "text-gray-900"
-                    }`}
-                  >
-                    {format(day, "d")}
-                  </div>
+                  {/* 시간 가로선 */}
+                  {getHourLabels().map((label) => {
+                    const hour = parseInt(label);
+                    const top = (hour - 8) * 60 * 1.2;
+                    return (
+                      <div
+                        key={label}
+                        className="absolute left-0 right-0 border-t border-gray-100"
+                        style={{ top: `${top}px` }}
+                      />
+                    );
+                  })}
+
+                  {/* 이벤트 블록 */}
+                  {dayEvents.map((event) => (
+                    <EventBlock
+                      key={`${event.eventId}-${event.date}`}
+                      event={event}
+                      category={categoryMap.get(event.categoryId)}
+                      members={members}
+                      onClick={onEventClick}
+                    />
+                  ))}
                 </div>
               );
             })}
           </div>
-        </div>
-      </div>
-
-      {/* 타임그리드 + 이벤트 */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="flex" style={{ height: `${GRID_HEIGHT}px` }}>
-          <TimeGrid>
-            <div
-              ref={gridScrollRef}
-              className="overflow-x-auto scrollbar-hide h-full"
-              onScroll={handleGridScroll}
-            >
-              <div className="flex min-w-[700px] h-full">
-                {days.map((day) => {
-                  const dateStr = toDateString(day);
-                  const dayEvents = eventsByDate.get(dateStr) ?? [];
-                  const isToday = isSameDay(day, today);
-                  return (
-                    <div
-                      key={dateStr}
-                      className={`relative flex-1 min-w-[100px] border-l border-gray-100 ${
-                        isToday ? "bg-blue-50/20" : ""
-                      }`}
-                      style={{ height: `${GRID_HEIGHT}px` }}
-                    >
-                      {dayEvents.map((event) => (
-                        <EventBlock
-                          key={`${event.eventId}-${event.date}`}
-                          event={event}
-                          category={categoryMap.get(event.categoryId)}
-                          members={members}
-                          onClick={onEventClick}
-                        />
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </TimeGrid>
         </div>
       </div>
     </div>
