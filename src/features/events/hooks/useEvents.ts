@@ -14,7 +14,8 @@ export function useEvents(from: string, to: string) {
   return useQuery({
     queryKey: ["events", from, to],
     queryFn: () => fetchEvents(from, to),
-    staleTime: 5 * 60 * 1000, // 5 minutes (PO-02)
+    staleTime: 30 * 1000, // 30 seconds - allow frequent refetch for cross-device sync
+    refetchInterval: 60 * 1000, // poll every 60s for changes from other devices
   });
 }
 
