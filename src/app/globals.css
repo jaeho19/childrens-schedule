@@ -1,12 +1,18 @@
 @import "tailwindcss";
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
 
   /* WeekView: 헤더와 본문이 동일한 그리드 컬럼을 공유 */
   --week-time-col: 2.5rem;   /* 시간 라벨 열 (모바일) */
-  --week-grid-cols: var(--week-time-col) repeat(7, 1fr);
+  --week-grid-cols: var(--week-time-col) repeat(7, minmax(0, 1fr));
 }
 
 @theme inline {
@@ -29,11 +35,14 @@ body {
 .week-grid-row {
   display: grid;
   grid-template-columns: var(--week-grid-cols);
+  min-width: 0; /* grid 컨테이너가 넘치지 않도록 */
 }
 
 /* 요일 컬럼 세로 경계선 (헤더 + 본문 공통) */
 .week-day-col {
   border-right: 1px solid #e5e7eb; /* gray-200 */
+  min-width: 0;    /* 1fr 셀이 콘텐츠에 의해 늘어나지 않도록 */
+  overflow: hidden; /* 넘치는 텍스트 잘라내기 */
 }
 .week-day-col:last-child {
   border-right: none;

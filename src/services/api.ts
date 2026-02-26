@@ -1,80 +1,97 @@
-import type { CalendarEvent, RecurrenceException, Member, Category } from "@/types";
-import { MEMBERS, CATEGORIES, EVENTS, EXCEPTIONS } from "@/lib/seed-data";
-import { expandAllEvents } from "@/lib/recurrence";
-import { fromDateString } from "@/lib/date-utils";
-import type { ExpandedEvent } from "@/types";
+/**
+ * Client-side API layer — calls Next.js API Routes via fetch.
+ */
+import type { CalendarEvent, RecurrenceException, ExpandedEvent, Member, Category } from "@/types";
 
-// 현재는 시드 데이터 기반 로컬 구현
-// 추후 BKIT 백엔드 API로 교체 예정
+async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(url, options);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: "Request failed" }));
+    throw new Error(body.error || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
 
-let events = [...EVENTS];
-let exceptions = [...EXCEPTIONS];
+// ─── Auth ────────────────────────────────────────────
+
+export async function verifyAuth(pin: string): Promise<boolean> {
+  const res = await fetch("/api/auth/verify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pin }),
+  });
+  return res.ok;
+}
+
+export async function checkAuth(): Promise<boolean> {
+  const data = await apiFetch<{ authenticated: boolean }>("/api/auth/status");
+  return data.authenticated;
+}
+
+// ─── Members / Categories ────────────────────────────
 
 export async function fetchMembers(): Promise<Member[]> {
-  return MEMBERS;
+  return apiFetch("/api/members");
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  return CATEGORIES;
+  return apiFetch("/api/categories");
 }
+
+// ─── Events ──────────────────────────────────────────
 
 export async function fetchEvents(from: string, to: string): Promise<ExpandedEvent[]> {
-  const rangeStart = fromDateString(from);
-  const rangeEnd = fromDateString(to);
-  return expandAllEvents(events, exceptions, rangeStart, rangeEnd);
+  return apiFetch(`/api/events?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
 }
 
-export async function fetchRawEvents(): Promise<CalendarEvent[]> {
-  return events;
-}
-
-export async function fetchEvent(id: string): Promise<CalendarEvent | null> {
-  return events.find((e) => e.id === id) ?? null;
-}
-
-export async function fetchExceptions(eventId: string): Promise<RecurrenceException[]> {
-  return exceptions.filter((ex) => ex.eventId === eventId);
+export async function fetchEvent(id: string): Promise<CalendarEvent> {
+  return apiFetch(`/api/events/${encodeURIComponent(id)}`);
 }
 
 export async function createEvent(
   data: Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">
 ): Promise<CalendarEvent> {
-  const newEvent: CalendarEvent = {
-    ...data,
-    id: `evt-${Date.now()}`,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  events.push(newEvent);
-  return newEvent;
+  return apiFetch("/api/events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
 }
 
 export async function updateEvent(
   id: string,
   data: Partial<Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">>
 ): Promise<CalendarEvent> {
-  const idx = events.findIndex((e) => e.id === id);
-  if (idx === -1) throw new Error("Event not found");
-  events[idx] = { ...events[idx], ...data, updatedAt: new Date().toISOString() };
-  return events[idx];
+  return apiFetch(`/api/events/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
 }
 
 export async function deleteEvent(id: string): Promise<void> {
-  events = events.filter((e) => e.id !== id);
-  exceptions = exceptions.filter((ex) => ex.eventId !== id);
+  await apiFetch(`/api/events/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+// ─── Exceptions ──────────────────────────────────────
+
+export async function fetchExceptions(eventId: string): Promise<RecurrenceException[]> {
+  return apiFetch(`/api/events/${encodeURIComponent(eventId)}/exceptions`);
 }
 
 export async function createException(
   data: Omit<RecurrenceException, "id">
 ): Promise<RecurrenceException> {
-  const newException: RecurrenceException = {
-    ...data,
-    id: `exc-${Date.now()}`,
-  };
-  exceptions.push(newException);
-  return newException;
+  return apiFetch(`/api/events/${encodeURIComponent(data.eventId)}/exceptions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
 }
 
-export async function deleteException(id: string): Promise<void> {
-  exceptions = exceptions.filter((ex) => ex.id !== id);
+export async function deleteException(eventId: string, exId: string): Promise<void> {
+  await apiFetch(
+    `/api/events/${encodeURIComponent(eventId)}/exceptions/${encodeURIComponent(exId)}`,
+    { method: "DELETE" }
+  );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback, useRef } from "react";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 
 import { startOfMonth, endOfMonth, startOfWeek, endOfWeek } from "date-fns";
@@ -9,6 +9,7 @@ import { useCalendarStore } from "@/stores/calendarStore";
 import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/features/events/hooks/useEvents";
 import { useMembers } from "@/features/members/hooks/useMembers";
 import { useCategories } from "@/features/categories/hooks/useCategories";
+import { checkAuth } from "@/services/api";
 import { getWeekRange, toDateString } from "@/lib/date-utils";
 import { CalendarHeader } from "@/components/layout/CalendarHeader";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -60,7 +61,18 @@ export default function HomePage() {
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ExpandedEvent | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const mainRef = useRef<HTMLElement>(null);
+
+  // Check existing session on mount (JWT cookie persistence)
+  useEffect(() => {
+    checkAuth()
+      .then((isAuth) => {
+        setAuthenticated(isAuth);
+        setAuthChecking(false);
+      })
+      .catch(() => setAuthChecking(false));
+  }, []);
 
   // 스와이프 네비게이션 (MR-06)
   useSwipeNavigation(mainRef, {
@@ -172,6 +184,14 @@ export default function HomePage() {
         );
     }
   };
+
+  if (authChecking) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+      </div>
+    );
+  }
 
   if (!authenticated) {
     return <PinLogin onSuccess={() => setAuthenticated(true)} />;

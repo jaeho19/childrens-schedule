@@ -14,7 +14,7 @@ export function useEvents(from: string, to: string) {
   return useQuery({
     queryKey: ["events", from, to],
     queryFn: () => fetchEvents(from, to),
-    staleTime: 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes (PO-02)
   });
 }
 

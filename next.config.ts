@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "export",
+  // API Routes + Middleware require server mode (Netlify supports this via @netlify/plugin-nextjs)
 };
 
 export default nextConfig;

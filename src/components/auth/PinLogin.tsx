@@ -1,27 +1,38 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { verifyAuth } from "@/services/api";
 
 interface PinLoginProps {
   onSuccess: () => void;
 }
 
 const PIN_LENGTH = 4;
-const AUTH_PIN = "0924";
 
 export function PinLogin({ onSuccess }: PinLoginProps) {
   const [digits, setDigits] = useState<string[]>(Array(PIN_LENGTH).fill(""));
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleSubmit = useCallback(
-    (pin: string) => {
-      if (pin === AUTH_PIN) {
-        onSuccess();
-      } else {
-        setError("PIN이 올바르지 않습니다.");
+    async (pin: string) => {
+      setLoading(true);
+      try {
+        const success = await verifyAuth(pin);
+        if (success) {
+          onSuccess();
+        } else {
+          setError("PIN이 올바르지 않습니다.");
+          setDigits(Array(PIN_LENGTH).fill(""));
+          setTimeout(() => inputRefs.current[0]?.focus(), 0);
+        }
+      } catch {
+        setError("인증 중 오류가 발생했습니다.");
         setDigits(Array(PIN_LENGTH).fill(""));
         setTimeout(() => inputRefs.current[0]?.focus(), 0);
+      } finally {
+        setLoading(false);
       }
     },
     [onSuccess]
@@ -78,13 +89,14 @@ export function PinLogin({ onSuccess }: PinLoginProps) {
               value={digit}
               onChange={(e) => handleDigitChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
+              disabled={loading}
               className={`h-14 w-14 rounded-xl border-2 text-center text-xl font-bold outline-none transition-colors ${
                 error
                   ? "border-red-400 bg-red-50"
                   : digit
                   ? "border-blue-500 bg-blue-50"
                   : "border-gray-200 bg-gray-50 focus:border-blue-400"
-              }`}
+              } ${loading ? "opacity-50" : ""}`}
               autoFocus={i === 0}
             />
           ))}
@@ -92,6 +104,9 @@ export function PinLogin({ onSuccess }: PinLoginProps) {
 
         {error && (
           <p className="mb-4 text-center text-sm font-medium text-red-500">{error}</p>
+        )}
+        {loading && (
+          <p className="text-center text-sm text-gray-400">확인 중...</p>
         )}
       </div>
     </div>
